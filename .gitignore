@@ -2,8 +2,8 @@ _ref_*
 __pycache__/
 build/
 dev.log
-test/
 *.dwl
+*.dwl2
 templates/
 reference/
 HeDingAssistor/
