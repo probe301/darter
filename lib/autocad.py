@@ -1,6 +1,8 @@
 ﻿
 
 import win32com.client
+# import win32api
+# import platform
 import time
 import os
 import re
@@ -1630,6 +1632,8 @@ def test_add_recangle_and_circle():
   print(circle)
 
 
+
+
 def test_add_text():
   cad = AutoCAD()
   t1 = cad.add_text("111", origin=(100, 200), height=5, alignment='center')
@@ -1652,7 +1656,7 @@ def test_add_point():
   print(p2.color)
 
 
-def test_add_polyline():
+def test_add_polyline2():
   cad = AutoCAD()
   rand = pylon.rand
   pl = cad.add_polyline((rand(10.0, 12), rand(20.0, 22)),
@@ -1799,6 +1803,22 @@ def pending_test_insert_cad_entitiesu():
   cad.draw_frame(entities, padding='20%')
 
 
+def pending_fetch_road_names():
+  '''
+  依据坐标生成周边道路 ★★★★★
+  - 道路信息记录
+  - dwg 图, 仅含路中线和道路名称
+  - 中线为连续join过的线
+  - 以中线和其上的名称压盖判断道路名称
+  - 使用shp版?
+  - 地块裁切后检测矩形区域内的切出的道路
+  - 按照虚拟中线位置标注路名称
+
+  从巨大地形图中裁切polygon区域 ★★★★★
+  - 首先矩形区域
+  - 加工 : 断线 过滤部分图层 转换颜色 成块
+  - 巨大图形时防止当机
+  '''
 
 
 
