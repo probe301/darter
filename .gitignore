@@ -6,7 +6,9 @@ dev.log
 *.dwl2
 templates/
 reference/
-HeDingAssistor/
+HeDing_DiJi_Assistor/
+DiJiAssistor/
 _back/
 Desktop.ini
 test_hidden/
+darter_commandline.py

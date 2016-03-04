@@ -3,7 +3,6 @@ import os
 import time
 import pylon
 from pylon import puts
-# import Converter
 from converter import SpaceCoordinate
 from converter import ColorEditor
 from converter import CADVariant
