@@ -378,7 +378,10 @@ class AutoCADPolyline(AutoCADEntity):
   def get_tan_angle(self, i):
     v1 = self.vertex(i)
     v2 = self.vertex((i+1) % self.count)
-    return (v2[1]-v1[1]) / (v2[0]-v1[0])
+    if v2[0]-v1[0] == 0:
+      return float('Inf')
+    else:
+      return (v2[1]-v1[1]) / (v2[0]-v1[0])
 
   def tan_angles(self):
     return [self.get_tan_angle(i) for i in range(self.count)]

@@ -18,10 +18,6 @@ from collections import defaultdict
 
 
 
-
-
-
-
 class AutoCADError(Exception):
   pass
 
@@ -1087,31 +1083,48 @@ class AutoCAD:
     return center, bulge
 
 
-  def dim_polyline_vertex_and_sides(self, polylines, height=1,
+  def dim_polyline_vertex_and_sides(self, polylines, height='auto',
                                     vertex_index_start=1,
                                     vertex_label_prefix='',
                                     draw_vertex_label=True,
                                     draw_segment_length=True,
                                     vertex_label_layer='dim_jzd_index',
                                     side_length_label_layer='dim_length',
+                                    generate_vertex_circle=True
                                     ):
     '''
     标注 一组Polyline 各分段的直线长度，弧长
-    polylines - 需要标注的 polyline 如为多个, 编号连续后推
-    height=1 - 界址点和界址长度的字号
-    vertex_index_start=1 - 第一个点的编号, 之后的类推
-    vertex_label_prefix='' - 界址点前缀
-    draw_vertex_label=True - 标注界址点编号
-    draw_segment_length=True - 标注界址长度
-    vertex_label_layer='dim_jzd_index' - 界址点编号图层
-    side_length_label_layer='dim_length' - 界址长度图层
 
-    [ ] 自适应文字大小，应该取得外框的较长边，以此决定
-    [ ] 垂直边界 如矩形 计算 tan angle 角度出错
+    polylines  需要标注的 polyline 如为多个, 编号连续后推
+    height=1   界址点和界址长度的字号, 如果 'auto' 则自动推测一个合适的字号
+    vertex_index_start=1      第一个点的编号, 之后的类推
+    vertex_label_prefix=''    界址点前缀
+    draw_vertex_label=True    标注界址点编号
+    draw_segment_length=True  标注界址长度
+    vertex_label_layer='dim_jzd_index'    界址点编号图层
+    side_length_label_layer='dim_length'  界址长度图层
+
+    垂直边界 如矩形 计算 tan angle 角度时应取 Pi/2
+    自适应文字大小，应该取得外框的较长边，以此决定
+
     [ ] 遇到圆弧时 界址边长位置出错
+    [ ] 遇到反尖角时, offset 会出错 无法取得偏斜位置
 
     '''
-    radius_dist = height * 1.2
+    if not polylines:
+      raise AutoCADError('需要选中至少一条多段线Polyline')
+    if any(p.entity_type != 'Polyline' for p in polylines):
+      raise AutoCADError('被标注的实体需要全部为多段线Polyline')
+    if any(not p.closed for p in polylines):
+      raise AutoCADError('被标注的多段线Polyline需要全部闭合')
+
+    if height == 'auto':
+      # 取所有Polyline里最大的一个对角线 折算比例作为height
+      max_diagonal = max(p.bounding_box_diagonal for p in polylines)
+      height = max_diagonal * 0.014
+
+
+    radius_dist = height * 0.9  # 点号边长文字距Polyline的偏移距离
     get_dist = SpaceCoordinate().distance
     for polyline in polylines:
       polyline_offset = polyline.offset(0.001)
@@ -1128,8 +1141,7 @@ class AutoCAD:
                               ):
         vt, vtoffset, segmidoffset, angle, segmid = postion_info
 
-        if draw_vertex_label:
-          'jzd label'
+        if draw_vertex_label:  # 'point index label'
           dist = get_dist((vt.x, vt.y), (vtoffset.x, vtoffset.y))
           point_x = radius_dist / dist * (vtoffset.x - vt.x) + vt.x
           point_y = radius_dist / dist * (vtoffset.y - vt.y) + vt.y
@@ -1139,10 +1151,7 @@ class AutoCAD:
                                height=height)
           text.layer = vertex_label_layer
 
-        if draw_segment_length:
-
-          'segment length label'
-
+        if draw_segment_length:  # 'side length label'
           dist = get_dist(segmid, segmidoffset)
           midpt_x = radius_dist / dist * (segmidoffset[0] - segmid[0]) + segmid[0]
           midpt_y = radius_dist / dist * (segmidoffset[1] - segmid[1]) + segmid[1]
@@ -1154,7 +1163,12 @@ class AutoCAD:
 
         vertex_index_start += 1
 
-
+    if generate_vertex_circle:
+      circle_size = height * 0.14
+      for polyline in polylines:
+        self.generate_jzd_circle(polyline, size=circle_size,
+                                 layer=vertex_label_layer,
+                                 segment=32)
 
 
 
@@ -1170,25 +1184,42 @@ class AutoCAD:
   ##  ##  ##      ##      ##   ## ##  ##    ##
   ##   ## ####### ##       #####  ##   ##   ##
 
-  def wipeout(self, en, segment=32):
-    ''' 以指定的 circle 生成消隐, 并擦除内部
-    只能用 Polygon 做擦除，不能用圆
+
+  def circle_to_polyline(self, circle, segment=32):
+    '''circle 转换 polyline 配合 wipeout 使用'''
+    coords = []
+    center_x = circle.center[0]
+    center_y = circle.center[1]
+    radius = circle.radius
+    for i in range(segment):
+      coords.append(center_x + radius * math.cos(i/segment*2*math.pi))
+      coords.append(center_y + radius * math.sin(i/segment*2*math.pi))
+    pline = self.add_polyline(coords, closed=True)
+    pline.layer = circle.layer
+    pline.color = circle.color
+    return pline
+
+
+  def wipeout(self, circle, segment=32):
+    ''' 以指定的 circle 生成消隐 Wipeout, 并擦除内部
+
     segment - Polygon 分段数
+
+    Wipeout 对象似乎不能由 com 对象创建, 只能由 autolisp 创建
+    Wipeout 只能用 Polygon 做擦除，不能用 Circle
+    AutoCAD 应事先设置框架开启 _wipeout frame on
     '''
-    # Dim size As Double: size = lineheight * 0.1
-    # 返算合适的节点大小
-    lisp = "_polygon {} {},{} i {}".format(segment, en.center[0], en.center[1], en.radius)
+    layer_backup = self.active_layer
+    self.switch_layer(layer_name=circle.layer)
+    polygon = self.circle_to_polyline(circle=circle, segment=segment)
+    # 拼接lisp之前需要确保没有选中图形, 因为之前可能刚巧选中了带圆弧的pline
+    # 则以下 _wipeout polyline... 会以这个带圆弧pline做消隐并报错
+    self.send_lisp("_wipeout f on ")
+    lisp = "_wipeout polyline {} y ".format(polygon.handle)  # y = delete polygon
     self.send_lisp(lisp)
-    polygon = self.last_entity()
-    lisp = "_wipeout p {} n ".format(polygon.handle)
-    polygon.layer = en.layer
-    polygon.color = en.color
-    self.send_lisp(lisp)
-    wipeout = self.last_entity()
-    wipeout.layer = en.layer
-    wipeout.color = en.color
-    lisp = "_draworder {}  f".format(wipeout.handle)
-    en.delete()
+    circle.delete()
+    self.switch_layer(layer_name=layer_backup)
+
 
   def generate_jzd_circle(self, polyline, size=5, layer='dim_jzd_point', segment=32):
     ''' 生成界址桩点圆圈
@@ -1238,11 +1269,12 @@ class AutoCAD:
     原有文字形成的矩形如果宽度大于高度,
     则以文字的横轴坐标决定重排的顺序, 否则以纵轴决定顺序
 
-    auto_size - 自动调整文字大小, 将设为指定起点终点距离的 4%'''
-    # origin
+    auto_size - 自动调整文字大小, 开启后会将文字大小设为起点终点距离的4%'''
+
+    texts = [t for t in texts if t.entity_type == 'Text']
     if len(texts) <= 1:
-      print('需至少选中两个文字对象')
-      return False
+      raise AutoCADError('需至少选中两个文字对象 {}'.format(texts))
+
     range_x = max(t.origin[0] for t in texts) - min(t.origin[0] for t in texts)
     range_y = max(t.origin[1] for t in texts) - min(t.origin[1] for t in texts)
 
@@ -1268,7 +1300,8 @@ class AutoCAD:
         text.size = text_size
 
 
-  def dim_area(self, *enlist, unit='m²', precision=2, font_size='*0.05'):
+  def dim_area(self, enlist, unit='', precision=2,
+               font_size='*0.05', layer_name='.dim_area'):
     ''' 标注实体的面积
     先计算传入的一组对象的大小，决定用多大的字号
     然后换算单位和小数精度
@@ -1290,7 +1323,7 @@ class AutoCAD:
     else:
       height = font_size
     layer_backup = self.active_layer
-    self.switch_layer('.dim_area', color='red')
+    self.switch_layer(layer_name, color='red')
     for en in enlist:
 
       if en.entity_type == 'Polyline' and not en.closed:
@@ -1515,13 +1548,13 @@ class AutoCAD:
 
 
 
-'''
+
 ####### #######  ###### #######
    ##   ##      ##         ##
    ##   ######   #####     ##
    ##   ##           ##    ##
    ##   ####### ######     ##
-'''
+
 
 def test_cad_app():
   '''测试打开CAD文件'''
