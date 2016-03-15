@@ -9,15 +9,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>569</width>
-    <height>508</height>
+    <width>582</width>
+    <height>516</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>582</width>
+    <height>516</height>
+   </size>
   </property>
   <property name="focusPolicy">
    <enum>Qt::StrongFocus</enum>
@@ -35,7 +41,7 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>551</width>
+      <width>561</width>
       <height>351</height>
      </rect>
     </property>
@@ -49,7 +55,7 @@
      <enum>QTabWidget::North</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
@@ -61,7 +67,7 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>200</x>
+        <x>190</x>
         <y>10</y>
         <width>171</width>
         <height>301</height>
@@ -213,10 +219,10 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>380</x>
+        <x>370</x>
         <y>10</y>
-        <width>151</width>
-        <height>221</height>
+        <width>171</width>
+        <height>201</height>
        </rect>
       </property>
       <property name="title">
@@ -227,7 +233,7 @@
         <rect>
          <x>80</x>
          <y>20</y>
-         <width>61</width>
+         <width>81</width>
          <height>22</height>
         </rect>
        </property>
@@ -249,8 +255,8 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>140</y>
-         <width>131</width>
+         <y>150</y>
+         <width>151</width>
          <height>41</height>
         </rect>
        </property>
@@ -262,8 +268,8 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>50</y>
-         <width>121</width>
+         <y>40</y>
+         <width>151</width>
          <height>21</height>
         </rect>
        </property>
@@ -278,13 +284,13 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>70</y>
-         <width>121</width>
+         <y>60</y>
+         <width>151</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string>标注界址点圆圈消隐</string>
+        <string>标注界址点消隐</string>
        </property>
        <property name="checked">
         <bool>true</bool>
@@ -294,8 +300,8 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>90</y>
-         <width>121</width>
+         <y>80</y>
+         <width>151</width>
          <height>21</height>
         </rect>
        </property>
@@ -313,8 +319,8 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>110</y>
-         <width>121</width>
+         <y>100</y>
+         <width>151</width>
          <height>21</height>
         </rect>
        </property>
@@ -329,7 +335,7 @@
        <property name="geometry">
         <rect>
          <x>100</x>
-         <y>190</y>
+         <y>120</y>
          <width>41</width>
          <height>21</height>
         </rect>
@@ -342,7 +348,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>190</y>
+         <y>120</y>
          <width>91</width>
          <height>21</height>
         </rect>
@@ -395,8 +401,8 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>181</width>
-        <height>201</height>
+        <width>171</width>
+        <height>161</height>
        </rect>
       </property>
       <property name="title">
@@ -406,8 +412,8 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>150</y>
-         <width>161</width>
+         <y>110</y>
+         <width>151</width>
          <height>41</height>
         </rect>
        </property>
@@ -420,8 +426,8 @@
         <rect>
          <x>10</x>
          <y>10</y>
-         <width>161</width>
-         <height>111</height>
+         <width>151</width>
+         <height>101</height>
         </rect>
        </property>
        <widget class="QRadioButton" name="dim_area_unit_none_ratio">
@@ -443,8 +449,8 @@
        <widget class="QRadioButton" name="dim_area_unit_km2_ratio">
         <property name="geometry">
          <rect>
-          <x>0</x>
-          <y>70</y>
+          <x>70</x>
+          <y>50</y>
           <width>71</width>
           <height>16</height>
          </rect>
@@ -456,8 +462,8 @@
        <widget class="QRadioButton" name="dim_area_unit_hm2_ratio">
         <property name="geometry">
          <rect>
-          <x>0</x>
-          <y>50</y>
+          <x>70</x>
+          <y>30</y>
           <width>71</width>
           <height>16</height>
          </rect>
@@ -486,7 +492,7 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>90</y>
+          <y>50</y>
           <width>71</width>
           <height>16</height>
          </rect>
@@ -495,38 +501,38 @@
          <string>亩</string>
         </property>
        </widget>
-      </widget>
-      <widget class="QLabel" name="label_7">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>120</y>
-         <width>91</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>保留小数位数</string>
-       </property>
-      </widget>
-      <widget class="QSpinBox" name="dim_area_precision_spin">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>120</y>
-         <width>51</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <number>-5</number>
-       </property>
-       <property name="maximum">
-        <number>5</number>
-       </property>
-       <property name="value">
-        <number>1</number>
-       </property>
+       <widget class="QSpinBox" name="dim_area_precision_spin">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>70</y>
+          <width>51</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="minimum">
+         <number>-5</number>
+        </property>
+        <property name="maximum">
+         <number>5</number>
+        </property>
+        <property name="value">
+         <number>1</number>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_7">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>70</y>
+          <width>91</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>保留小数位数</string>
+        </property>
+       </widget>
       </widget>
      </widget>
     </widget>
@@ -860,77 +866,6 @@
        </property>
        <property name="value">
         <double>5000.000000000000000</double>
-       </property>
-      </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_16">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>200</y>
-        <width>151</width>
-        <height>121</height>
-       </rect>
-      </property>
-      <property name="title">
-       <string>比对面积</string>
-      </property>
-      <widget class="QRadioButton" name="compare_selection_area_last_ratio">
-       <property name="geometry">
-        <rect>
-         <x>60</x>
-         <y>90</y>
-         <width>91</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>最后的对象</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_3">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>70</y>
-         <width>51</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>基准是</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="compare_selection_area_button">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>20</y>
-         <width>131</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>比对选中对象面积</string>
-       </property>
-      </widget>
-      <widget class="QRadioButton" name="compare_selection_area_first_ratio">
-       <property name="geometry">
-        <rect>
-         <x>60</x>
-         <y>70</y>
-         <width>91</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>第一个对象</string>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
        </property>
       </widget>
      </widget>
@@ -1398,7 +1333,7 @@
      <rect>
       <x>10</x>
       <y>370</y>
-      <width>551</width>
+      <width>561</width>
       <height>121</height>
      </rect>
     </property>

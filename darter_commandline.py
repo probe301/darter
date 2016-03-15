@@ -6,16 +6,16 @@ from lib.autocad import AutoCAD
 # from lib.entity import AutoCADEntityError
 
 cad = AutoCAD()
-entities = list(cad.selecting())
+selecting_entities = list(cad.selecting())
 
 
 
 def test_dim_area():
   '标注对象面积'
-  cad.dim_area(entities)
+  cad.dim_area(selecting_entities)
   '标注对象面积 加单位后缀 保留5位小数'
-  cad.dim_area(entities, unit='m²', precision=5)
-  print(list(entities))
+  cad.dim_area(selecting_entities, unit='m²', precision=5)
+  print(list(selecting_entities))
 
 
 def test_dim_road():
@@ -43,15 +43,13 @@ def test_dim_road():
 
 def test_arrange_text():
   '''重新排布文字位置使之变整齐'''
-  cad.arrange_text(entities, auto_size=True)
-
+  cad.arrange_text(selecting_entities, auto_size=True)
 
 
 def test_dim_polyline_vertex_and_sides():
   ''' 标注 Polyline 界址点号 界址边长 界址点圆圈消隐
       多个Polyline则按照选定顺序连续标记'''
-  polylines = entities
-  cad.dim_polyline_vertex_and_sides(polylines,
+  cad.dim_polyline_vertex_and_sides(selecting_entities,
                                     height=5,
                                     vertex_index_start=1,
                                     vertex_label_prefix='J',
@@ -62,10 +60,28 @@ def test_dim_polyline_vertex_and_sides():
                                     generate_vertex_circle=True
                                     )
 
+
 def test_dim_polyline_vertex_and_sides_auto():
   '''标注 Polyline 界址点号 界址边长 界址点圆圈消隐 自动选择文字大小'''
-  polylines = entities
-  cad.dim_polyline_vertex_and_sides(polylines, height='auto')
+  cad.dim_polyline_vertex_and_sides(selecting_entities, height='auto')
+
+
+def test_scan_entities():
+  '''扫描选中对象的信息
+
+  对于多段线额外统计 闭合线总面积 开放线总长度
+  hole: 将多段线视为外部包裹线和内部孔洞, 统计面积时以最大面积减去其他较小的
+  '''
+  r = cad.scan_entities(selecting_entities,
+                        hole=True, error_color=None, error_layer=None)
+  for line in r:
+    line | puts()
+
+
+
+
+
+
 
 
 
@@ -80,10 +96,6 @@ def test_dim_polyline_vertex_and_sides_auto():
 
 
 
-def todo_dim_polyline_vertex_and_sides_arc():
-  '''标注 Polyline 界址点号 界址边长 正确处理圆弧 反尖角'''
-  polylines = entities
-  cad.dim_polyline_vertex_and_sides(polylines, height='auto')
 
 
 
@@ -92,28 +104,7 @@ def todo_dim_polyline_vertex_and_sides_arc():
 
 
 
-
-def test_report_entities():
-  '报告选中对象的信息'
-  cad = AutoCAD()
-  entities = list(cad.selecting())
-  r = cad.report_entities(entities, hole=False, error_color=None, error_layer=None)
-  print(r)
-
-
-
-def test_report_area():
-  '统计面积'
-  cad = AutoCAD()
-  entities = list(cad.selecting())
-  r = cad.report_area(*entities, island=False)
-  print(r)
-
-
-
-
-
-def test_add_polyline():
+def todo_add_polyline_by_coord_text():
   '''以输入坐标画polyline'''
 
   cad.add_polyline(430710.1, 856920.4,
@@ -126,7 +117,59 @@ def test_add_polyline():
                    closed=True)
 
 
+def todo_read_gcd():
+  '''读取高程点'''
+  cad = AutoCAD()
+  file_path = 'path'
+  for line in datalines(open(file_path).read()):
+    index, _, x, y, elevation = line.split(',')
+    cad.add_text(elevation, origin=(float(x), float(y)))
+    cad.add_point(float(x), float(y))
 
+
+
+
+
+
+def test_gcd_string():
+  '''读取高程点 读取坐标点'''
+  s = '''
+
+  # 01,,376173,875806,20.812
+  # 01,,376167,875809,20.881
+  # 01,,376298,875822,20.780
+  # 01,,376295,875827,20.744
+  # 01,,376399,875735,20.760
+  # 01,,376405,875734,20.872
+
+  j6,,376230.527,875750.679,20.947
+  j5,,376226.292,875743.894,20.787
+  j8,,376314.162,875580.859,20.039
+  j7,,376308.053,875584.223,20.903
+  j1,,376051.421,875669.464,20.911
+  j2,,376122.484,875534.670,20.916
+  j3,,376121.527,875531.260,20.973
+
+  '''
+
+
+  s = '''
+
+    376897.510 871120.891
+    376917.510 871120.891
+    376917.510 871100.891
+    376897.510 871100.891
+    376127.488 878184.564
+    376172.488 878184.564
+    376172.488 878174.564
+    376127.488 878174.564
+
+  '''
+  cad = AutoCAD()
+  for line in datalines(s):
+    index, _, x, y, elevation = line.split(',')
+    cad.add_text(elevation, origin=(float(x), float(y)))
+    cad.add_point(float(x), float(y))
 
 
 
@@ -232,96 +275,92 @@ def test_redraw_vertex_sequence():
 
 
 
-def test_gcd():
-  '''读取高程点'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test_scan_entities_1():
   cad = AutoCAD()
-  file_path = 'path'
-  for line in datalines(open(file_path).read()):
-    index, _, x, y, elevation = line.split(',')
-    cad.add_text(elevation, origin=(float(x), float(y)))
-    cad.add_point(float(x), float(y))
+  s = set()
+  for en in cad.selecting():
+    if en.entity_type == 'Hatch':
+      s.add(en.layer)
+  print(s)
 
 
 
-
-def test_gcd_string():
-  '''读取高程点 读取坐标点'''
-  s = '''
-
-  # 01,,376173,875806,20.812
-  # 01,,376167,875809,20.881
-  # 01,,376298,875822,20.780
-  # 01,,376295,875827,20.744
-  # 01,,376399,875735,20.760
-  # 01,,376405,875734,20.872
-
-  j6,,376230.527,875750.679,20.947
-  j5,,376226.292,875743.894,20.787
-  j8,,376314.162,875580.859,20.039
-  j7,,376308.053,875584.223,20.903
-  j1,,376051.421,875669.464,20.911
-  j2,,376122.484,875534.670,20.916
-  j3,,376121.527,875531.260,20.973
-
-  '''
-
-
-  s = '''
-
-    376897.510 871120.891
-    376917.510 871120.891
-    376917.510 871100.891
-    376897.510 871100.891
-    376127.488 878184.564
-    376172.488 878184.564
-    376172.488 878174.564
-    376127.488 878174.564
-
-  '''
+def test_compare_area():
   cad = AutoCAD()
-  for line in datalines(s):
-    index, _, x, y, elevation = line.split(',')
-    cad.add_text(elevation, origin=(float(x), float(y)))
-    cad.add_point(float(x), float(y))
+  r = cad.compare_area(*list(cad.selecting()))
+  print(r)
 
 
 
 
-
-
-
-
-
-
-
-def test_windows_com():
-  '测试windows com接口'
-  import win32com.client
-  # import pythoncom
-  # import win32api
-  import platform
-  v = platform.uname().release
-  print(v)
-  print(platform.uname())
-  app = win32com.client.Dispatch('AutoCAD.Application.20')
-  # app.ActiveDocument
-  app.Visible = True
-
-
-
-def test_sum_area():
-  print(111)
+def todo_find_nearest_text():
   cad = AutoCAD()
-  areas = []
-  for text in cad.selecting():
-    print(text.text)
-    areas.append(float(text.text))
+  entities = list(cad.selecting())
+  numbers = []
+  names = []
+  for text in entities:
+    if text.color == 'black':
+      names.append(text)
+    else:
+      numbers.append(text)
+  from Converter import SpaceCoordinate
+  dist = SpaceCoordinate().distance2
+  for number in numbers:
+    near = min(names, key=lambda name: dist(name.mid_point, number.mid_point)) | puts()
+    near.color = 'cyan'
 
-  print('sum', sum(areas))
 
 
 
-def test_detect_duplicate():
+
+
+def exec_ascii():
+  from pylon import generate_figlet
+  generate_figlet('polyline', fonts=['space_op'])
+  generate_figlet('edit', fonts=['space_op'])
+
+
+
+
+
+
+
+
+
+
+
+def todo_dim_polyline_vertex_and_sides_arc():
+  '''标注 Polyline 界址点号 界址边长 正确处理圆弧 反尖角'''
+  polylines = selecting_entities
+  cad.dim_polyline_vertex_and_sides(polylines, height='auto')
+
+
+
+
+def todo_detect_duplicate_polylines():
+  pass
+
+
+def todo_detect_duplicate():
   cad = AutoCAD()
   heding = []
   dk = []
@@ -342,50 +381,4 @@ def test_detect_duplicate():
         # en.layer = '重复'
         en.color = 'yellow'
 
-
-
-
-
-
-
-def test_report_entities_1():
-  cad = AutoCAD()
-  s = set()
-  for en in cad.selecting():
-    if en.entity_type == 'Hatch':
-      s.add(en.layer)
-  print(s)
-
-
-
-def test_compare_area():
-  cad = AutoCAD()
-  r = cad.compare_area(*list(cad.selecting()))
-  print(r)
-
-
-
-
-def test_find_nearest_text():
-  cad = AutoCAD()
-  entities = list(cad.selecting())
-  numbers = []
-  names = []
-  for text in entities:
-    if text.color == 'black':
-      names.append(text)
-    else:
-      numbers.append(text)
-  from Converter import SpaceCoordinate
-  dist = SpaceCoordinate().distance2
-  for number in numbers:
-    near = min(names, key=lambda name: dist(name.mid_point, number.mid_point)) | puts()
-    near.color = 'cyan'
-
-
-
-def exec_ascii():
-  from pylon import generate_figlet
-  generate_figlet('polyline', fonts=['space_op'])
-  generate_figlet('edit', fonts=['space_op'])
 
