@@ -24,15 +24,15 @@ class AutoCADError(Exception):
 
 
 
+ #####  ##   ## ####### #####   ######  #####  ######
+##   ## ##   ##    ##  ##   ## ###     ##   ## ##   ##
+####### ##   ##    ##  ##   ## ##      ####### ##   ##
+##   ## ##   ##    ##  ##   ## ###     ##   ## ##   ##
+##   ##  #####     ##   #####   ###### ##   ## ######
 
 class AutoCAD:
   """AutoCAD
 
-   #####  ##   ## ####### #####   ######  #####  ######
-  ##   ## ##   ##    ##  ##   ## ###     ##   ## ##   ##
-  ####### ##   ##    ##  ##   ## ##      ####### ##   ##
-  ##   ## ##   ##    ##  ##   ## ###     ##   ## ##   ##
-  ##   ##  #####     ##   #####   ###### ##   ## ######
 
   """
   def __init__(self, path=None, visible=True):
@@ -670,6 +670,51 @@ class AutoCAD:
 
 
 
+  def circle_to_polyline(self, circle, segment=32):
+    '''circle 转换 polyline 配合 wipeout 使用'''
+    coords = []
+    center_x = circle.center[0]
+    center_y = circle.center[1]
+    radius = circle.radius
+    for i in range(segment):
+      coords.append(center_x + radius * math.cos(i/segment*2*math.pi))
+      coords.append(center_y + radius * math.sin(i/segment*2*math.pi))
+    pline = self.add_polyline(coords, closed=True)
+    pline.layer = circle.layer
+    pline.color = circle.color
+    return pline
+
+
+  def wipeout(self, circle, segment=32):
+    ''' 以指定的 circle 生成消隐 Wipeout, 并擦除内部
+
+    segment - Polygon 分段数
+
+    Wipeout 对象似乎不能由 com 对象创建, 只能由 autolisp 创建
+    Wipeout 只能用 Polygon 做擦除，不能用 Circle
+    AutoCAD 应事先设置框架开启 _wipeout frame on
+    '''
+    layer_backup = self.active_layer
+    self.switch_layer(layer_name=circle.layer)
+    polygon = self.circle_to_polyline(circle=circle, segment=segment)
+    # 拼接lisp之前需要确保没有选中图形, 因为之前可能刚巧选中了带圆弧的pline
+    # 则以下 _wipeout polyline... 会以这个带圆弧pline做消隐并报错
+    self.send_lisp("_wipeout f on ")
+    lisp = "_wipeout polyline {} y ".format(polygon.handle)  # y = delete polygon
+    self.send_lisp(lisp)
+    circle.delete()
+    self.switch_layer(layer_name=layer_backup)
+
+
+  def generate_jzd_circle(self, polyline, size=5, layer='dim_jzd_point', segment=32):
+    ''' 生成界址桩点圆圈
+    提供多段线, 在其每个节点标注界址点圆圈，生成消隐, 并擦除内部
+    '''
+    for po in polyline.vertex_spatial():
+      circle = self.add_circle((po.x, po.y), size)
+      circle.layer = layer
+      self.wipeout(circle, segment=segment)
+
 
 
 
@@ -1185,82 +1230,6 @@ class AutoCAD:
   ##   ## ####### ##       #####  ##   ##   ##
 
 
-  def circle_to_polyline(self, circle, segment=32):
-    '''circle 转换 polyline 配合 wipeout 使用'''
-    coords = []
-    center_x = circle.center[0]
-    center_y = circle.center[1]
-    radius = circle.radius
-    for i in range(segment):
-      coords.append(center_x + radius * math.cos(i/segment*2*math.pi))
-      coords.append(center_y + radius * math.sin(i/segment*2*math.pi))
-    pline = self.add_polyline(coords, closed=True)
-    pline.layer = circle.layer
-    pline.color = circle.color
-    return pline
-
-
-  def wipeout(self, circle, segment=32):
-    ''' 以指定的 circle 生成消隐 Wipeout, 并擦除内部
-
-    segment - Polygon 分段数
-
-    Wipeout 对象似乎不能由 com 对象创建, 只能由 autolisp 创建
-    Wipeout 只能用 Polygon 做擦除，不能用 Circle
-    AutoCAD 应事先设置框架开启 _wipeout frame on
-    '''
-    layer_backup = self.active_layer
-    self.switch_layer(layer_name=circle.layer)
-    polygon = self.circle_to_polyline(circle=circle, segment=segment)
-    # 拼接lisp之前需要确保没有选中图形, 因为之前可能刚巧选中了带圆弧的pline
-    # 则以下 _wipeout polyline... 会以这个带圆弧pline做消隐并报错
-    self.send_lisp("_wipeout f on ")
-    lisp = "_wipeout polyline {} y ".format(polygon.handle)  # y = delete polygon
-    self.send_lisp(lisp)
-    circle.delete()
-    self.switch_layer(layer_name=layer_backup)
-
-
-  def generate_jzd_circle(self, polyline, size=5, layer='dim_jzd_point', segment=32):
-    ''' 生成界址桩点圆圈
-    提供多段线, 在其每个节点标注界址点圆圈，生成消隐, 并擦除内部
-    '''
-    for po in polyline.vertex_spatial():
-      circle = self.add_circle((po.x, po.y), size)
-      circle.layer = layer
-      self.wipeout(circle, segment=segment)
-
-  def report_area(self, *enlist, island=False):
-    '''统计面积
-    TODO(Probe): 应该改成统计更多的信息
-    island=True 时将输入polyline视为岛状数据，总面积应为总边界和内部岛屿面积的差值
-    '''
-    ret = []
-    for pl in self.selecting():
-      if pl.closed:
-        # print(pl)
-        ret.append(pl)
-    # report = [str(pl) for pl in ret]
-    area = [pl.area for pl in ret]
-    if len(list(pylon.dedupe(area))) != len(area):
-      print('!!WARNNING!! seems has duplicate polyline')
-
-    if island:   # 岛状的一组polyline，由一个面积很大的总边界，和一群小面积的边界线构成
-      whole = max(area)
-      real = whole*2 - sum(area)
-      islands = ['{:.2f}'.format(a) for a in area if a != whole]
-      log = ('面积统计(带环岛): \n实际 {:.2f}, \n最大边界 {:.2f}, \n其余内部地块 {}'.format(real, whole, islands))
-    else:
-      area_for_print = ['{:.2f}'.format(a) for a in area]
-      log = ('面积统计: \n总计: {:.2f}, \n单独: {}'.format(sum(area), area_for_print))
-    # puts(log)
-    return log
-    # puts "all areas : #{arr.join(' ')}"
-    # others = arr - [arr.max]
-    # area = arr.max - others.inject(&:+)
-    # puts "area clear islands : #{area}"
-
-
   def arrange_text(self, texts, auto_size=False):
     ''' 重新排列选中的文字
     选中多个文字并指定两点, 将文字均匀排布至两点之间
@@ -1348,47 +1317,54 @@ class AutoCAD:
 
 
 
-  def report_entities(self, entities, hole=False, error_color=None, error_layer=None):
-    '''汇总选中元素的属性信息
 
-    report like >
-      选中对象数目: 23
-      多段线: 16 (未闭合: 3)
-      - 总面积 78124.3
+
+  def scan_entities(self, entities, hole=False, error_color=None, error_layer=None):
+    '''浏览选中元素的属性信息
+
+    hole: 将多段线视为外部包裹线和内部孔洞, 统计面积应以最大面积减去其他较小的
+
+    report like:
+      选中对象数目: 34
+      多段线: 16
+      - 闭合多段线: 12, 最大面积 581190.30, 刨除孔洞后 224123.34
+      - 注 从面积推测, 可能有重复的多段线 [49025.04, 154020.95, 154020.95, 581190.29]
+      - 开放多段线: 4, 总长度 1352.81
       图案填充: 3 (无面积: 1)
       - 总面积 67812.4
       文字: 10
       直线: 3
       圆弧: 4
       圆: 7
-
     '''
     report = []
     endict = defaultdict(list)
     for en in entities:
       endict[en.entity_type].append(en)
 
-
     if endict['Polyline']:
       poly_all = endict['Polyline']
       report.append('多段线: {}'.format(len(poly_all)))
-
       poly_closed = [en for en in poly_all if en.closed]
       poly_open = [en for en in poly_all if not en.closed]
+
       if poly_closed:
+        pline_areas = [round(pl.area, 3) for pl in poly_closed]
         if hole and len(poly_closed) > 1:
           # 将多段线视为外部包裹线和内部孔洞,
           # 统计面积应以最大面积减去其他较小的
-          max_area = max(en.area for en in poly_closed)
-          area = max_area*2 - sum(en.area for en in poly_closed)
-          report.append('- 闭合线: {}, 最大面积 {:.2f}, 刨除孔洞后 {:.2f}'.format(len(poly_closed), max_area, area))
+          max_area = max(pline_areas)
+          erased_area = max_area*2 - sum(pline_areas)
+          report.append('- 闭合多段线: {}, 最大面积 {:.3f}, 刨除孔洞后 {:.3f}'.format(len(poly_closed), max_area, erased_area))
         else:
-          area = sum(en.area for en in poly_closed)
-          report.append('- 闭合线: {}, 总面积 {:.2f}'.format(len(poly_closed), area))
+          report.append('- 闭合多段线: {}, 总面积 {:.3f}'.format(len(poly_closed), sum(pline_areas)))
+
+        if len(set(pline_areas)) != len(pline_areas):
+          report.append('- 注 从面积推测, 可能有重复的多段线 {}'.format(sorted(pline_areas)))
 
       if poly_open:
-        length = sum(en.length for en in poly_open)
-        report.append('- 开放线: {}, 总长度 {:.2f}'.format(len(poly_open), length))
+        lengths = sum(en.length for en in poly_open)
+        report.append('- 开放多段线: {}, 总长度 {:.3f}'.format(len(poly_open), lengths))
 
     if endict['Hatch']:
       hatches = endict['Hatch']
@@ -1399,7 +1375,7 @@ class AutoCAD:
           hatch_total['Normal'].append(en.area)
         except AutoCADEntityError:
           hatch_total['Error'].append(en)
-      report.append('图案填充: {}, 总面积 {:.2f}'.format(len(hatch_total['Normal']), sum(hatch_total['Normal'])))
+      report.append('图案填充: {}, 总面积 {:.3f}'.format(len(hatch_total['Normal']), sum(hatch_total['Normal'])))
       if hatch_total['Error']:
         report.append('- 图案填充中 {} 个未取得面积'.format(len(hatch_total['Error'])))
         for en in hatch_total['Error']:
@@ -1412,8 +1388,6 @@ class AutoCAD:
       if endict[entity_type]:
         report.append('{}: {}'.format(entity_type, len(endict[entity_type])))
 
-
-    # return '\n'.join(report)
     return report
 
 
@@ -1867,3 +1841,18 @@ def exec_figlet():
   pylon.generate_figlet(text='test', fonts=['space_op'])
   pylon.generate_figlet(text='label', fonts=['space_op'])
 
+
+
+
+def test_windows_com():
+  '测试windows com接口'
+  import win32com.client
+  # import pythoncom
+  # import win32api
+  import platform
+  v = platform.uname().release
+  print(v)
+  print(platform.uname())
+  app = win32com.client.Dispatch('AutoCAD.Application.20')
+  # app.ActiveDocument
+  app.Visible = True
