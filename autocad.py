@@ -330,16 +330,16 @@ class AutoCAD:
       msg += "\n"
     self.document.Utility.Prompt(msg)
 
-  def plot_command(self, content_range, device, paper, export_path):
+  def plot_command(self, content_range, device, paper, export_path, landscape=None):
     ''' 拼接 plot lisp 字符串 '''
     if content_range is 'all':
-      is_landscape = 'L'
+      landscape = landscape or 'L'
     else:
       left_bottom, right_top = content_range
-      is_landscape = 'L' if right_top[0] - left_bottom[0] > right_top[1] - left_bottom[1] else 'P'
-
-    cmd_body = ['plot', 'Y', '', device, paper, 'M', is_landscape, 'N']
-    # cmd_body = "plot|Y||{}|{}||{}||".format(device, paper, is_landscape)
+      predict = 'L' if right_top[0] - left_bottom[0] > right_top[1] - left_bottom[1] else 'P'
+      landscape = landscape or predict
+    cmd_body = ['plot', 'Y', '', device, paper, 'M', landscape, 'N']
+    # cmd_body = "plot|Y||{}|{}||{}||".format(device, paper, landscape)
     if content_range == 'all':
       cmd_body.append('E')
     else:
@@ -486,7 +486,7 @@ class AutoCAD:
     else:
       raise
 
-  def plot(self, device, paper, export_path='', content='selecting'):
+  def plot(self, device, paper, export_path='', content='selecting', landscape=None):
     # mode = all / selecting / points
     # device = 'DWG To PDF.pc3'
     # paper = 'ISO A4 (210.00 x 297.00 毫米)'
@@ -496,7 +496,7 @@ class AutoCAD:
       content_coordinate = 'all'
     # export_path = os.path.join(self.path, os.path.splitext(self.title)[0] + '.pdF')
     # puts(export_path)
-    cmd = self.plot_command(content_coordinate, device, paper, export_path)
+    cmd = self.plot_command(content_coordinate, device, paper, export_path, landscape)
     self.send_lisp(cmd)
 
 
@@ -540,8 +540,8 @@ class AutoCAD:
     return rec
 
 
-  def add_polyline(self, *coord, closed=False):
-    com_points = CADVariant().points_list_to_variant(*coord)
+  def add_polyline(self, coord, closed=False):
+    com_points = CADVariant().points_list_to_variant(coord)
     pline = self.modelspace.AddLightweightPolyline(com_points)
     pline = AutoCADEntity.create(pline)
     pline.closed = closed
@@ -1619,6 +1619,23 @@ def test_select_entity():
   objs = cad.select(first=7, layer='11')  # return selection
   print('\n  select(layer=11)')
   puts(objs)
+
+
+
+def test_select_unknown_entity():
+  cad = AutoCAD()
+  cad.open('D:/TEMPWORK/西区预征地/Drawing5.dwg')
+  objs = cad.selecting()
+  for obj in objs:
+    print(obj)
+    print(obj.entity.Coordinates)
+    from pylon import windows
+    co = []
+    for x, y, z in windows(obj.entity.Coordinates, length=3):
+      co.append([x, y])
+    print(co)
+    cad.add_polyline(co, closed=True)
+
 
 
 def test_add_recangle_and_circle():

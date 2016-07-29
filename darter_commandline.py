@@ -2,7 +2,7 @@
 
 from pylon import datalines
 from pylon import puts
-from lib.autocad import AutoCAD
+from autocad import AutoCAD
 # from lib.entity import AutoCADEntityError
 
 cad = AutoCAD()
@@ -65,6 +65,18 @@ def test_dim_polyline_vertex_and_sides_auto():
   '''标注 Polyline 界址点号 界址边长 界址点圆圈消隐 自动选择文字大小'''
   cad.dim_polyline_vertex_and_sides(selecting_entities, height='auto')
 
+
+def test_dim_polyline_only_sides():
+  cad.dim_polyline_vertex_and_sides(selecting_entities,
+                                    height=12,
+                                    vertex_index_start=1,
+                                    vertex_label_prefix='J',
+                                    draw_vertex_label=False,
+                                    draw_segment_length=True,
+                                    vertex_label_layer='dim_jzd_index',
+                                    side_length_label_layer='dim_length',
+                                    generate_vertex_circle=True
+                                    )
 
 def test_scan_entities():
   '''扫描选中对象的信息

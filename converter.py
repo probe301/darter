@@ -148,8 +148,9 @@ class CADVariant(pylon.Singleton):
   def __init__(self):
     pass
 
-  def points_list_to_variant(self, *coord):
-    data = list(float(x) for x in pylon.flatten(coord))
+  def points_list_to_variant(self, coord):
+    import pylon
+    data = list(float(x) for x in pylon.flatten(coord)) | pylon.puts()
     if len(data) % 2 == 1:
       raise AttributeError("point_to_variant: coord length must be even")
     com_seq = win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, data)
