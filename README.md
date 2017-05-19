@@ -2,7 +2,7 @@
 
 # Darter
 
-Darter 是基于 Python3 的 AutoCAD, 实现了部分 API 和一些适用于建筑, 地形图绘制的工具.
+Darter 是基于 Python3 win32com 实现的 AutoCAD API, 实现了部分绘图, 查询功能, 提供了一些适用于建筑, 地形图绘制的工具.
 
 
 
