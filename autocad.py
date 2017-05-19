@@ -1808,7 +1808,7 @@ def pending_test_select_entity_on_screen_last():
 
 
 
-def pending_test_insert_cad_entitiesu():
+def pending_test_insert_cad_entities():
   from AutoCADEntity import AutoCADPolyline, AutoCADPoint
   cad = AutoCAD()
   po = cad.add_point(2, 4)
